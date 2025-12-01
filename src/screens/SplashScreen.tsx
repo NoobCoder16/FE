@@ -18,7 +18,7 @@ export default function SplashScreen({ navigation }: Props) {
     // 1.5초 정도 보여준 뒤 로그인 화면으로 이동
     const timer = setTimeout(() => {
       navigation.replace('Login'); // 필요하면 'Home'으로 바꿔도 됨
-    }, 1500);
+    }, 2000);
 
     return () => clearTimeout(timer);
   }, [navigation]);
