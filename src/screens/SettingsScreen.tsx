@@ -6,9 +6,12 @@ import {
   Text,
   StyleSheet,
   Pressable,
+  Image, 
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChevronLeft } from 'lucide-react-native';
+
+const pandaImg = require('../assets/images/panda-mascot.png');
 
 export default function SettingsScreen({ navigation }: any) {
   const [pushEnabled, setPushEnabled] = useState(false);
@@ -35,7 +38,9 @@ export default function SettingsScreen({ navigation }: any) {
 
         {/* ================= 프로필 영역 ================= */}
         <View style={styles.profileSection}>
-          <View style={styles.profileCircle} />
+          <View style={styles.profileAvatarWrapper}>
+            <Image source={pandaImg} style={styles.profileAvatar} />
+          </View>
           <Text style={styles.profileSubtitle}>사진 변경</Text>
         </View>
 
@@ -133,12 +138,21 @@ const styles = StyleSheet.create({
     marginTop: 40,
     marginBottom: 30,
   },
-  profileCircle: {
+  profileAvatarWrapper: {
     width: 98,
     height: 98,
     borderRadius: 49,
-    backgroundColor: '#2c303c',
+    borderWidth: 3,
+    borderColor: '#2c303c',
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 12,
+  },
+  profileAvatar: {
+    width: 64,
+    height: 64,
+    resizeMode: 'contain',
   },
   profileSubtitle: {
     fontSize: 15,
