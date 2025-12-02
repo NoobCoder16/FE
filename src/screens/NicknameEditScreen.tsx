@@ -19,8 +19,7 @@ const NicknameEditScreen = () => {
   };
 
   const handleConfirm = () => {
-    // TODO: 닉네임 저장 API 호출이나 전역 상태 업데이트
-    // 예: route.params.onChange?.(nickname);
+    // TODO: 닉네임 저장 로직 (Context / API 등)
     navigation.goBack();
   };
 
@@ -40,13 +39,6 @@ const NicknameEditScreen = () => {
 
       {/* 내용 */}
       <View style={styles.content}>
-        {/* 프로필 아이콘 */}
-        <View style={styles.avatarWrapper}>
-          <View style={styles.avatarCircle}>
-            <View style={styles.avatarInner} />
-          </View>
-        </View>
-
         {/* 카드 영역 */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>닉네임 변경하기</Text>
@@ -85,7 +77,7 @@ export default NicknameEditScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#E5E7ED', // 위쪽은 약간 회색
+    backgroundColor: '#E5E7ED',
   },
   header: {
     height: 56,
@@ -109,28 +101,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 32,
-  },
-  avatarWrapper: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  avatarCircle: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    borderWidth: 4,
-    borderColor: '#111827',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-  },
-  avatarInner: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 4,
-    borderColor: '#111827',
+    paddingTop: 48, // 카드가 헤더에서 조금 떨어지게 여백만 조정
   },
   card: {
     backgroundColor: '#F9FAFB',
