@@ -13,7 +13,6 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
-  ScrollView,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { ChevronLeft, Send, Mic, Eye, Lightbulb, X } from 'lucide-react-native'; // 아이콘 추가
@@ -132,7 +131,7 @@ export default function ChatScreen() {
       const result = await getGrammarFeedback(content);
       // 결과 업데이트
       setMessages(prev => prev.map(msg => msg.id === messageId ? { ...msg, feedback: result, isLoadingExtra: false } : msg));
-    } catch (error) {
+    } catch {
       Alert.alert('Error', '피드백을 불러오지 못했습니다.');
       setMessages(prev => prev.map(msg => msg.id === messageId ? { ...msg, isLoadingExtra: false } : msg));
     }
@@ -145,7 +144,7 @@ export default function ChatScreen() {
     try {
       const result = await getReplySuggestions(content);
       setMessages(prev => prev.map(msg => msg.id === messageId ? { ...msg, suggestion: result, isLoadingExtra: false } : msg));
-    } catch (error) {
+    } catch {
       Alert.alert('Error', '추천 답변을 불러오지 못했습니다.');
       setMessages(prev => prev.map(msg => msg.id === messageId ? { ...msg, isLoadingExtra: false } : msg));
     }
