@@ -26,7 +26,8 @@ import ReviewScreen from './src/screens/ReviewScreen';
 import ChatSettingsScreen from './src/screens/chatSettingScreen';
 import ChatScreen from './src/screens/ChatScreen'; 
 import ChatScript from './src/screens/ChatScript'; 
-/*import NicknameEditScreen from './src/screens/NicknameEditScreen';*/
+import ChatHistoryScreen from './src/screens/ChatHistoryScreen';
+
 
 const Stack = createNativeStackNavigator();
 
@@ -69,6 +70,12 @@ function App(): React.JSX.Element {
           <Stack.Screen
             name="Profile"
             component={ProfileScreen}
+            options={{ headerShown: false }}
+          />
+
+          <Stack.Screen
+            name="ChatHistory"
+            component={ChatHistoryScreen}
             options={{ headerShown: false }}
           />
 

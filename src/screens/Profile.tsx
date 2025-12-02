@@ -117,7 +117,7 @@ export default function ProfileScreen({ navigation }: Props) {
             style={styles.menuItem}
             onPress={() => {
               console.log('[RN] 회화 스크립트 클릭');
-              navigation.navigate('Script');
+              navigation.navigate('ChatHistory');
             }}
           >
             <Text style={styles.menuIcon}>💬</Text>

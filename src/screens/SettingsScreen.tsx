@@ -1,3 +1,4 @@
+
 // src/screens/SettingsScreen.tsx
 
 import React, { useState, useEffect } from 'react';
@@ -6,20 +7,14 @@ import {
   Text,
   StyleSheet,
   Pressable,
-<<<<<<< HEAD
-  Image, 
-=======
   Image,
   TextInput,
   Alert,
->>>>>>> 1545450 (name/photo)
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChevronLeft } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { launchImageLibrary } from 'react-native-image-picker';
-
-const pandaImg = require('../assets/images/panda-mascot.png');
 
 const pandaImg = require('../assets/images/panda-mascot.png');
 
@@ -118,12 +113,6 @@ export default function SettingsScreen({ navigation }: any) {
 
         {/* ===== 프로필 사진 ===== */}
         <View style={styles.profileSection}>
-<<<<<<< HEAD
-          <View style={styles.profileAvatarWrapper}>
-            <Image source={pandaImg} style={styles.profileAvatar} />
-          </View>
-          <Text style={styles.profileSubtitle}>사진 변경</Text>
-=======
           <Pressable style={styles.profileAvatarWrapper} onPress={pickImage}>
             <Image
               source={avatarUri ? { uri: avatarUri } : pandaImg}
@@ -136,17 +125,10 @@ export default function SettingsScreen({ navigation }: any) {
           <Pressable onPress={pickImage}>
             <Text style={styles.profileSubtitle}>사진 변경</Text>
           </Pressable>
->>>>>>> 1545450 (name/photo)
         </View>
 
         {/* ===== 이름 ===== */}
         <View style={styles.nameRow}>
-<<<<<<< HEAD
-          <Text style={styles.nameLabel}>이름</Text>
-          <Pressable /*onPress={() => navigation.navigate('NicknameEdit')}*/>
-            <Text style={styles.nameAction}>변경하기</Text>
-          </Pressable>
-=======
           <View style={{ flex: 1 }}>
             <Text style={styles.nameLabel}>이름</Text>
 
@@ -178,7 +160,6 @@ export default function SettingsScreen({ navigation }: any) {
               <Text style={styles.nameAction}>변경하기</Text>
             </Pressable>
           )}
->>>>>>> 1545450 (name/photo)
         </View>
 
         <View style={styles.nameDivider} />
@@ -241,16 +222,7 @@ const styles = StyleSheet.create({
   backButton: { width: 32, justifyContent: 'center' },
   headerTitle: { fontSize: 16, fontWeight: '600', color: '#2c303c' },
 
-<<<<<<< HEAD
-  /* ===== 프로필 ===== */
-  profileSection: {
-    alignItems: 'center',
-    marginTop: 40,
-    marginBottom: 30,
-  },
-=======
   profileSection: { alignItems: 'center', marginTop: 40, marginBottom: 30 },
->>>>>>> 1545450 (name/photo)
   profileAvatarWrapper: {
     width: 98,
     height: 98,
@@ -262,21 +234,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-<<<<<<< HEAD
-  profileAvatar: {
-    width: 64,
-    height: 64,
-    resizeMode: 'contain',
-  },
-  profileSubtitle: {
-    fontSize: 15,
-    color: '#6A6E79',
-  },
-=======
   profileAvatar: { width: 64, height: 64, resizeMode: 'contain' },
   profileName: { fontSize: 17, fontWeight: '600', color: '#2c303c', marginBottom: 4 },
   profileSubtitle: { fontSize: 15, color: '#6A6E79', textDecorationLine: 'underline' },
->>>>>>> 1545450 (name/photo)
 
   nameRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 24, alignItems: 'center' },
   nameLabel: { fontSize: 14, color: '#6A6E79', marginBottom: 2 },
@@ -328,3 +288,4 @@ const styles = StyleSheet.create({
   },
   toggleThumbOn: { left: 18 },
 });
+
