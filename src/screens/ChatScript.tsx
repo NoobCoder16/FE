@@ -5,14 +5,14 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   FlatList,
-  ActivityIndicator, // 로딩 표시용
+  ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { ChevronLeft } from 'lucide-react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // 1. 임포트
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ChatScreen과 동일한 타입 정의 (저장된 데이터 구조)
 type ChatMessage = {
@@ -31,34 +31,32 @@ type DisplayMessage = {
 
 export default function ScriptScreen() {
   const navigation = useNavigation<any>();
-  
-  // 2. 데이터를 담을 State 선언
+  const insets = useSafeAreaInsets();
+
   const [scriptData, setScriptData] = useState<DisplayMessage[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // 3. 화면이 켜질 때 데이터 불러오기
   useEffect(() => {
     const loadChatHistory = async () => {
       try {
         const jsonValue = await AsyncStorage.getItem('last_chat_history');
-        
+
         if (jsonValue != null) {
           const parsedData: ChatMessage[] = JSON.parse(jsonValue);
-          
-          // 4. 데이터 포맷 변환 (ChatScreen 데이터 -> ScriptScreen 표시용)
+
           const formattedData: DisplayMessage[] = parsedData.map((msg) => ({
             id: msg.id,
             role: msg.role === 'user' ? 'user' : 'assistant', // model -> assistant 통합
-            name: msg.role === 'user' ? 'Me' : 'Brainbox',   // 이름 부여
-            text: msg.content, // content -> text 매핑
+            name: msg.role === 'user' ? 'Me' : 'Brainbox',
+            text: msg.content,
           }));
 
           setScriptData(formattedData);
         } else {
-            console.log("저장된 대화가 없습니다.");
+          console.log('저장된 대화가 없습니다.');
         }
       } catch (e) {
-        console.error("데이터 불러오기 실패", e);
+        console.error('데이터 불러오기 실패', e);
       } finally {
         setLoading(false);
       }
@@ -70,10 +68,25 @@ export default function ScriptScreen() {
   const renderItem = ({ item }: { item: DisplayMessage }) => {
     const isUser = item.role === 'user';
     return (
-      <View style={[styles.messageContainer, isUser ? styles.userContainer : styles.aiContainer]}>
+      <View
+        style={[
+          styles.messageContainer,
+          isUser ? styles.userContainer : styles.aiContainer,
+        ]}
+      >
         <Text style={styles.nameLabel}>{item.name}</Text>
-        <View style={[styles.bubble, isUser ? styles.userBubble : styles.aiBubble]}>
-          <Text style={[styles.messageText, isUser ? styles.userText : styles.aiText]}>
+        <View
+          style={[
+            styles.bubble,
+            isUser ? styles.userBubble : styles.aiBubble,
+          ]}
+        >
+          <Text
+            style={[
+              styles.messageText,
+              isUser ? styles.userText : styles.aiText,
+            ]}
+          >
             {item.text}
           </Text>
         </View>
@@ -81,57 +94,79 @@ export default function ScriptScreen() {
     );
   };
 
+  // 로딩 화면
   if (loading) {
     return (
-      <View style={[styles.root, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color="#2C303C" />
-      </View>
+      <SafeAreaView
+        style={styles.safeArea}
+        edges={['left', 'right', 'bottom']} // top은 insets.top으로 처리
+      >
+        <View
+          style={[
+            styles.root,
+            { paddingTop: insets.top, justifyContent: 'center', alignItems: 'center' },
+          ]}
+        >
+          <ActivityIndicator size="large" color="#2C303C" />
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.root}>
-      <View style={styles.gradientBg} />
+    <SafeAreaView
+      style={styles.safeArea}
+      edges={['left', 'right', 'bottom']} // top은 insets.top으로 처리
+    >
+      <View style={[styles.root, { paddingTop: insets.top }]}>
+        <View style={styles.gradientBg} />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
-          <ChevronLeft color="#000" size={28} />
-        </TouchableOpacity>
-        <Text style={styles.title}>대화 스크립트</Text>
-        <View style={{ width: 28 }} />
-      </View>
-
-      {/* 5. 데이터가 없을 경우 처리 */}
-      {scriptData.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>저장된 대화 내역이 없습니다.</Text>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.iconButton}
+          >
+            <ChevronLeft color="#000" size={28} />
+          </TouchableOpacity>
+          <Text style={styles.title}>대화 스크립트</Text>
+          <View style={{ width: 28 }} />
         </View>
-      ) : (
-        <FlatList
-          data={scriptData}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
 
-      {/* Footer Button */}
-      <View style={styles.footer}>
-        <TouchableOpacity 
-          style={styles.closeButton}
-          onPress={() => navigation.navigate('Home')}
-        >
-          <Text style={styles.closeButtonText}>닫기</Text>
-        </TouchableOpacity>
+        {/* 데이터 없을 경우 */}
+        {scriptData.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>저장된 대화 내역이 없습니다.</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={scriptData}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+          />
+        )}
+
+        {/* Footer Button */}
+        <View style={styles.footer}>
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => navigation.navigate('Home')}
+          >
+            <Text style={styles.closeButtonText}>닫기</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  // ... 기존 스타일 유지 ...
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#E5E7ED',
+  },
   root: {
     flex: 1,
     backgroundColor: '#fff',
@@ -212,7 +247,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   closeButton: {
-    width: '90%', // 반응형 width 수정
+    width: '90%',
     height: 50,
     backgroundColor: '#2C303C',
     borderRadius: 12,
@@ -234,5 +269,5 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     color: '#6b7280',
-  }
+  },
 });

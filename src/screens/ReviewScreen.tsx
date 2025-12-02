@@ -1,139 +1,180 @@
+// src/screens/ReviewScreen.tsx
+
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+} from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { ChevronLeft } from 'lucide-react-native';
+
+type CardItem = {
+  en: string;
+  kr: string;
+};
+
+const cards: CardItem[] = [
+  { en: 'Way to go.', kr: '잘했어' },
+  { en: 'I’m sold.', kr: '설득됐어' },
+  { en: 'Give her my best.', kr: '안부 전해줘' },
+  { en: 'Good for you.', kr: '잘됐다/좋겠다' },
+  { en: 'Time flies', kr: '시간 빠르다' },
+  { en: 'It’s up to you.', kr: '너가 결정해' },
+  { en: 'I mean it.', kr: '진심이야' },
+];
 
 export default function ReviewScreen() {
+  const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={styles.root}>
-      {/* 배경 그라데이션 대신 연한 회색 → 흰색 */}
-      <View style={styles.gradientBg} />
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
+      <View style={[styles.root, { paddingTop: insets.top }]}>
+        
+        {/* ===== 통일된 헤더 ===== */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <ChevronLeft size={24} color="#2c303c" />
+          </TouchableOpacity>
 
-      {/* 상단 제목 */}
-      <Text style={styles.title}>복습하기</Text>
+          <Text style={styles.headerTitle}>복습하기</Text>
 
-      {/* 카드 리스트 */}
-      {cards.map((item, index) => (
-        <View key={index} style={[styles.card, { top: item.top }]}>
-          <View style={styles.cardBg} />
-          <Text style={[styles.cardText, { left: 35 }]}>{item.en}</Text>
-          <Text style={[styles.cardText, { left: 230 }]}>{item.kr}</Text>
+          {/* 오른쪽 공간 (정렬 유지용) */}
+          <View style={{ width: 32 }} />
         </View>
-      ))}
 
-      {/* 버튼 1 */}
-      <View style={styles.btnLeft} />
-      <Text style={styles.btnLeftText}>스크립트</Text>
+        {/* 카드 리스트 */}
+        <ScrollView
+          contentContainerStyle={styles.cardList}
+          showsVerticalScrollIndicator={false}
+        >
+          {cards.map((item, index) => (
+            <View key={index} style={styles.card}>
+              <View style={styles.cardBg} />
+              <View style={styles.cardContentRow}>
+                <Text style={styles.cardTextEn}>{item.en}</Text>
+                <Text style={styles.cardTextKr}>{item.kr}</Text>
+              </View>
+            </View>
+          ))}
+        </ScrollView>
 
-      {/* 버튼 2 */}
-      <View style={styles.btnRight} />
-      <Text style={styles.btnRightText}>홈으로</Text>
+        {/* 하단 버튼 두 개 */}
+        <View style={styles.bottomButtonsRow}>
+          {/* 스크립트 → ChatScript 화면 */}
+          <TouchableOpacity
+            style={styles.btn}
+            onPress={() => navigation.navigate('Script')}
+          >
+            <Text style={styles.btnText}>스크립트</Text>
+          </TouchableOpacity>
 
-      {/* 상단 오른쪽 작은 사각형 */}
-      <View style={styles.smallBox} />
-    </View>
+          {/* 홈으로 → HomeScreen 화면 */}
+          <TouchableOpacity
+            style={styles.btn}
+            onPress={() => navigation.navigate('Home')}
+          >
+            <Text style={styles.btnText}>홈으로</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
-const cards = [
-  { en: 'Way to go.', kr: '잘했어', top: 179 },
-  { en: 'I’m sold.', kr: '설득됐어', top: 262 },
-  { en: 'Give her my best.', kr: '안부 전해줘', top: 345 },
-  { en: 'Good for you.', kr: '잘됐다/좋겠다', top: 428 },
-  { en: 'Time flies', kr: '시간 빠르다', top: 511 },
-  { en: 'It’s up to you.', kr: '너가 결정해', top: 594 },
-  { en: ' I mean it.', kr: '진심이야', top: 677 },
-];
-
 const styles = StyleSheet.create({
-  root: {
-    width: 412,
-    height: 917,
-    backgroundColor: 'white',
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#E5E7ED',
   },
-
-  gradientBg: {
-    position: 'absolute',
-    width: 412,
-    height: 917,
+  root: {
+    flex: 1,
     backgroundColor: '#E5E7ED',
   },
 
-  title: {
-    position: 'absolute',
-    left: 146,
-    top: 71,
-    fontSize: 24,
-    fontWeight: '700',
-    color: 'black',
+  /* ===== 통일된 헤더 스타일 ===== */
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#d5d8e0',
+    borderBottomWidth: 1,
+    borderBottomColor: '#c5c8d4',
+  },
+  backButton: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#2c303c',
+    textAlign: 'center',
   },
 
-  /* 카드 공통 */
+  /* 카드 리스트 */
+  cardList: {
+    paddingHorizontal: 20,
+    paddingBottom: 100,
+    rowGap: 12,
+    marginTop: 12,
+  },
   card: {
-    position: 'absolute',
-    width: 370,
+    width: '100%',
     height: 61,
-    left: 21,
+    justifyContent: 'center',
   },
-
   cardBg: {
-    position: 'absolute',
-    width: 370,
-    height: 61,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(191,195,208,0.5)',
     borderRadius: 15,
   },
-
-  cardText: {
-    position: 'absolute',
-    top: 20,
+  cardContentRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  cardTextEn: {
+    fontSize: 17,
+    fontWeight: '400',
+    color: 'black',
+  },
+  cardTextKr: {
     fontSize: 17,
     fontWeight: '400',
     color: 'black',
   },
 
-  /* 하단 버튼 (스크립트) */
-  btnLeft: {
+  /* 하단 버튼 영역 */
+  bottomButtonsRow: {
     position: 'absolute',
-    left: 56,
-    top: 825,
-    width: 114.5,
-    height: 35,
+    bottom: 32,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+  },
+  btn: {
+    width: 120,
+    height: 40,
     backgroundColor: '#2C303C',
     borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  btnLeftText: {
-    position: 'absolute',
-    left: 85,
-    top: 832,
+  btnText: {
     fontSize: 14,
     color: '#D5D8E0',
-  },
-
-  /* 하단 버튼 (홈으로) */
-  btnRight: {
-    position: 'absolute',
-    left: 251,
-    top: 825,
-    width: 114.5,
-    height: 35,
-    backgroundColor: '#2C303C',
-    borderRadius: 10,
-  },
-  btnRightText: {
-    position: 'absolute',
-    left: 286.14,
-    top: 832,
-    fontSize: 14,
-    color: '#D5D8E0',
-  },
-
-  /* 상단 작은 사각형 */
-  smallBox: {
-    position: 'absolute',
-    left: 245,
-    top: 76,
-    width: 24,
-    height: 20,
-    borderWidth: 2,
-    borderColor: 'black',
   },
 });

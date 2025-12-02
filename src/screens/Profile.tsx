@@ -1,15 +1,14 @@
-// src/screens/ProfileScreen.tsx
-
 import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   Image,
   Pressable,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ChevronLeft } from 'lucide-react-native';
 import PandaIcon from '../components/PandaIcon';
 
 type Props = {
@@ -20,9 +19,14 @@ type Props = {
 const pandaImg = require('../assets/images/panda-mascot.png');
 
 export default function ProfileScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.root}>
+    <SafeAreaView
+      style={styles.safeArea}
+      edges={['left', 'right', 'bottom']} // top은 insets.top으로 직접 처리
+    >
+      <View style={[styles.root, { paddingTop: insets.top }]}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerRow}>
@@ -30,7 +34,7 @@ export default function ProfileScreen({ navigation }: Props) {
               style={styles.backButton}
               onPress={() => navigation.goBack()}
             >
-              <Text style={styles.backIcon}>‹</Text>
+              <ChevronLeft color="#2c303c" size={24} />
             </Pressable>
 
             <View style={styles.headerLogoRow}>
@@ -75,7 +79,6 @@ export default function ProfileScreen({ navigation }: Props) {
               <Pressable
                 style={styles.settingsButton}
                 onPress={() => {
-                  // TODO: SettingsScreen 만들면 여기서 navigation.navigate('Settings')
                   console.log('[RN] 설정 버튼 클릭');
                   navigation.navigate('Settings');
                 }}
@@ -102,7 +105,6 @@ export default function ProfileScreen({ navigation }: Props) {
           <Pressable
             style={styles.menuItem}
             onPress={() => {
-              // TODO: StatsScreen 생기면 navigation.navigate('Stats')
               console.log('[RN] 학습 통계 클릭');
               navigation.navigate('StudyStats');
             }}
@@ -114,8 +116,8 @@ export default function ProfileScreen({ navigation }: Props) {
           <Pressable
             style={styles.menuItem}
             onPress={() => {
-              // TODO: HistoryScreen 생기면 navigation.navigate('History')
               console.log('[RN] 회화 스크립트 클릭');
+              navigation.navigate('Script');
             }}
           >
             <Text style={styles.menuIcon}>💬</Text>
@@ -145,7 +147,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#c5c8d4',
     paddingHorizontal: 16,
-    paddingTop: 10,
+    paddingTop: 10, // insets.top 위에 살짝 여백
     paddingBottom: 8,
   },
   headerRow: {

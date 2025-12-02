@@ -1,42 +1,56 @@
+// src/screens/SettingsScreen.tsx
+
 import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   Pressable,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ChevronLeft } from 'lucide-react-native';
 
 export default function SettingsScreen({ navigation }: any) {
   const [pushEnabled, setPushEnabled] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const togglePush = () => {
     setPushEnabled(prev => !prev);
-    console.log('[RN] 푸시 알림 상태:', !pushEnabled ? 'ON' : 'OFF');
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.root}>
-        <View style={styles.bg} />
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
+      <View style={[styles.root, { paddingTop: insets.top }]}>
 
-        {/* 프로필 */}
-        <View style={styles.profileWrapper}>
-          <View style={styles.profileCircle} />
-          <View style={styles.profileInner} />
+        {/* ===== 공통 헤더 ===== */}
+        <View style={styles.header}>
+          <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
+            <ChevronLeft size={24} color="#2c303c" />
+          </Pressable>
+
+          <Text style={styles.headerTitle}>설정</Text>
+
+          <View style={{ width: 32 }} />
         </View>
-        <Text style={styles.profileSubtitle}>사진 변경</Text>
 
-        {/* 이름 / 변경하기 */}
-        <Text style={styles.nameLabel}>이름</Text>
+        {/* ================= 프로필 영역 ================= */}
+        <View style={styles.profileSection}>
+          <View style={styles.profileCircle} />
+          <Text style={styles.profileSubtitle}>사진 변경</Text>
+        </View>
+
+        {/* ================= 이름 영역 ================= */}
+        <View style={styles.nameRow}>
+          <Text style={styles.nameLabel}>이름</Text>
+          <Pressable>
+            <Text style={styles.nameAction}>변경하기</Text>
+          </Pressable>
+        </View>
+
         <View style={styles.nameDivider} />
-        <Pressable>
-          <Text style={styles.nameAction}>변경하기</Text>
-        </Pressable>
 
-        {/* ===== 카드들 (이름 밑으로 전부 내려감) ===== */}
+        {/* ================= 카드 리스트 ================= */}
         <View style={styles.cardsContainer}>
-          {/* 비밀번호 변경 */}
           <Pressable
             style={styles.card}
             onPress={() => navigation.navigate('ChangePassword')}
@@ -44,7 +58,6 @@ export default function SettingsScreen({ navigation }: any) {
             <Text style={styles.cardLabel}>비밀번호 변경</Text>
           </Pressable>
 
-          {/* 푸시 알림 */}
           <Pressable style={styles.card} onPress={togglePush}>
             <Text style={styles.cardLabel}>푸시 알림</Text>
 
@@ -63,7 +76,6 @@ export default function SettingsScreen({ navigation }: any) {
             </View>
           </Pressable>
 
-          {/* 구독 */}
           <Pressable
             style={styles.card}
             onPress={() => navigation.navigate('Subscription')}
@@ -71,7 +83,6 @@ export default function SettingsScreen({ navigation }: any) {
             <Text style={styles.cardLabel}>구독</Text>
           </Pressable>
 
-          {/* 계정 관리 */}
           <Pressable
             style={styles.card}
             onPress={() => navigation.navigate('AccountManage')}
@@ -79,6 +90,7 @@ export default function SettingsScreen({ navigation }: any) {
             <Text style={styles.cardLabel}>계정 관리</Text>
           </Pressable>
         </View>
+
       </View>
     </SafeAreaView>
   );
@@ -91,78 +103,78 @@ const styles = StyleSheet.create({
   },
   root: {
     flex: 1,
-    width: '100%',
-    height: '100%',
-    position: 'relative',
-  },
-  bg: {
-    ...StyleSheet.absoluteFillObject,
     backgroundColor: '#E5E7ED',
   },
 
-  // 프로필
-  profileWrapper: {
-    position: 'absolute',
-    width: 98,
-    height: 98,
-    left: 155,
-    top: 140,
-    justifyContent: 'center',
+  /* ===== 헤더 ===== */
+  header: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#d5d8e0',
+    borderBottomWidth: 1,
+    borderBottomColor: '#c5c8d4',
+  },
+  backButton: {
+    width: 32,
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2c303c',
+  },
+
+  /* ===== 프로필 ===== */
+  profileSection: {
+    alignItems: 'center',
+    marginTop: 40,
+    marginBottom: 30,
   },
   profileCircle: {
     width: 98,
     height: 98,
     borderRadius: 49,
     backgroundColor: '#2c303c',
-  },
-  profileInner: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'white',
-    position: 'absolute',
+    marginBottom: 12,
   },
   profileSubtitle: {
-    position: 'absolute',
-    left: 170,
-    top: 250,
+    fontSize: 15,
     color: '#6A6E79',
-    fontSize: 17,
   },
 
-  // 이름 row
+  /* ===== 이름 row ===== */
+  nameRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
   nameLabel: {
-    position: 'absolute',
-    left: 43,
-    top: 310,
     fontSize: 17,
     color: '#2c303c',
   },
-  nameDivider: {
-    position: 'absolute',
-    width: 350,
-    top: 350,
-    left: 19,
-    borderBottomWidth: 1,
-    borderColor: '#6A6E79',
-  },
   nameAction: {
-    position: 'absolute',
-    left: 306,
-    top: 310,
     fontSize: 17,
     color: '#6A6E79',
   },
-
-  // 카드 컨테이너 (이름 밑으로 전체 내려감)
-  cardsContainer: {
-    marginTop: 380,
-    paddingHorizontal: 20,
-    rowGap: 12,
+  nameDivider: {
+    height: 1,
+    backgroundColor: '#6A6E79',
+    marginHorizontal: 20,
+    marginTop: 8,
+    marginBottom: 20,
   },
 
-  // 카드 스타일
+  /* ===== 카드 ===== */
+  cardsContainer: {
+    paddingHorizontal: 20,
+    rowGap: 12,
+    marginTop: 60,
+  },
+
   card: {
     width: '100%',
     height: 61,
@@ -170,13 +182,14 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     justifyContent: 'center',
     paddingHorizontal: 20,
+    position: 'relative',
   },
   cardLabel: {
     fontSize: 17,
     color: '#2c303c',
   },
 
-  // 토글
+  /* ===== 토글 ===== */
   toggleTrack: {
     width: 36,
     height: 20,
@@ -199,6 +212,6 @@ const styles = StyleSheet.create({
     top: 2,
   },
   toggleThumbOn: {
-    left: 18, // 36 - 16 - 2
+    left: 18,
   },
 });

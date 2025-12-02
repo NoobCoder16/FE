@@ -15,7 +15,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { ChevronLeft, Send, Mic, Eye, Lightbulb, X } from 'lucide-react-native'; // 아이콘 추가
+import { ChevronLeft, Send, Mic, Eye, Lightbulb, X } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ⚠️ API KEY 설정
@@ -25,8 +25,6 @@ const GEMINI_API_URL =
   `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`;
 
 // === [API 호출 함수들] ===
-
-// 1. 기본 대화 (기존 함수)
 async function callGemini(historyForGemini: any[], prompt: string): Promise<string> {
   const contents = [...historyForGemini, { role: 'user', parts: [{ text: prompt }] }];
   const res = await fetch(GEMINI_API_URL, {
@@ -38,7 +36,6 @@ async function callGemini(historyForGemini: any[], prompt: string): Promise<stri
   return data.candidates?.[0]?.content?.parts?.map((p: any) => p.text ?? '').join('') ?? '';
 }
 
-// 2. 문법 피드백 요청 함수
 async function getGrammarFeedback(userText: string): Promise<string> {
   const prompt = `
     Analyze the following English sentence written by a Korean student: "${userText}"
@@ -49,12 +46,9 @@ async function getGrammarFeedback(userText: string): Promise<string> {
     [Corrected]: (sentence)
     [Explanation]: (Korean explanation)
   `;
-  
-  // 히스토리 없이 단발성 요청
-  return await callGemini([], prompt); 
+  return await callGemini([], prompt);
 }
 
-// 3. 답변 추천 요청 함수
 async function getReplySuggestions(aiText: string): Promise<string> {
   const prompt = `
     The AI tutor said: "${aiText}"
@@ -68,15 +62,14 @@ async function getReplySuggestions(aiText: string): Promise<string> {
   return await callGemini([], prompt);
 }
 
-// === [타입 정의] ===
+// === 타입 ===
 type Message = {
   id: string;
   role: 'user' | 'assistant';
   content: string;
-  // 추가된 필드: 피드백 및 추천 기능용
-  feedback?: string | null;     // 문법 피드백 내용
-  suggestion?: string | null;   // 답변 추천 내용
-  isLoadingExtra?: boolean;     // 피드백/추천 로딩 중 여부
+  feedback?: string | null;
+  suggestion?: string | null;
+  isLoadingExtra?: boolean;
 };
 
 type RootStackParamList = {
@@ -96,14 +89,14 @@ export default function ChatScreen() {
       id: '1',
       role: 'assistant',
       content: "Hello! How are you today? Let's practice English!",
-      suggestion: null, 
+      suggestion: null,
     },
   ]);
+
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
-  // 스크롤 및 저장 로직
   useEffect(() => {
     if (messages.length > 0) {
       setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
@@ -113,23 +106,16 @@ export default function ChatScreen() {
         if (messages.length > 0) {
           await AsyncStorage.setItem('last_chat_history', JSON.stringify(messages));
         }
-      } catch (e) {
-        console.error(e);
-      }
+      } catch {}
     };
     saveChatHistory();
   }, [messages]);
 
-  // === [이벤트 핸들러] ===
-
-  // A. 문법 피드백 요청 (User 메시지용)
+  // === 기능 ===
   const handleRequestFeedback = async (messageId: string, content: string) => {
-    // 로딩 상태 시작
     setMessages(prev => prev.map(msg => msg.id === messageId ? { ...msg, isLoadingExtra: true } : msg));
-
     try {
       const result = await getGrammarFeedback(content);
-      // 결과 업데이트
       setMessages(prev => prev.map(msg => msg.id === messageId ? { ...msg, feedback: result, isLoadingExtra: false } : msg));
     } catch {
       Alert.alert('Error', '피드백을 불러오지 못했습니다.');
@@ -137,10 +123,8 @@ export default function ChatScreen() {
     }
   };
 
-  // B. 답변 추천 요청 (Assistant 메시지용)
   const handleRequestSuggestion = async (messageId: string, content: string) => {
     setMessages(prev => prev.map(msg => msg.id === messageId ? { ...msg, isLoadingExtra: true } : msg));
-
     try {
       const result = await getReplySuggestions(content);
       setMessages(prev => prev.map(msg => msg.id === messageId ? { ...msg, suggestion: result, isLoadingExtra: false } : msg));
@@ -150,21 +134,18 @@ export default function ChatScreen() {
     }
   };
 
-  // C. 피드백/추천 닫기
   const handleCloseExtra = (messageId: string, type: 'feedback' | 'suggestion') => {
     setMessages(prev => prev.map(msg => msg.id === messageId ? { ...msg, [type]: null } : msg));
   };
 
-  // D. 모드 변경
   const handleModeChange = () => {
-    Alert.alert('회화 스타일 선택', '사용할 영어 스타일을 선택하세요.', [
+    Alert.alert('회화 스타일 선택', '어떤 스타일로 대화할까요?', [
       { text: '😊 Casual', onPress: () => setMode('casual') },
       { text: '🎩 Formal', onPress: () => setMode('formal') },
       { text: '취소', style: 'cancel' },
     ]);
   };
 
-  // E. 메시지 전송
   const handleFormSubmit = async () => {
     if (!input.trim() || isLoading) return;
 
@@ -178,6 +159,7 @@ export default function ChatScreen() {
         role: msg.role === 'user' ? 'user' : 'model',
         parts: [{ text: msg.content }],
       }));
+
       const prompt = `${input}\n\n(Reply in a ${mode} tone suitable for English learning. Concise.)`;
       const responseText = await callGemini(historyForGemini, prompt);
 
@@ -186,32 +168,32 @@ export default function ChatScreen() {
         role: 'assistant',
         content: responseText,
       };
+
       setMessages(prev => [...prev, assistantMessage]);
-    } catch (error) {
-      console.error(error);
+    } catch {
       Alert.alert('Error', 'Failed to get response.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // === [렌더링 함수] ===
+  // === 렌더 ===
   const renderItem = ({ item }: { item: Message }) => {
     const isUser = item.role === 'user';
 
     return (
       <View style={{ marginBottom: 16 }}>
-        {/* 1. 메시지 버블 영역 */}
         <View style={[styles.messageRow, isUser ? styles.userRow : styles.assistantRow]}>
-          
-          {/* Assistant일 경우 왼쪽에 아이콘/버튼 배치 */}
+
           {!isUser && (
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => item.suggestion ? handleCloseExtra(item.id, 'suggestion') : handleRequestSuggestion(item.id, item.content)}
               style={styles.actionIconBtn}
               disabled={item.isLoadingExtra}
             >
-               {item.isLoadingExtra ? <ActivityIndicator size="small" color="#F59E0B" /> : <Lightbulb color="#F59E0B" size={20} fill={item.suggestion ? "#F59E0B" : "none"} />}
+              {item.isLoadingExtra
+                ? <ActivityIndicator size="small" color="#F59E0B" />
+                : <Lightbulb color="#F59E0B" size={20} fill={item.suggestion ? "#F59E0B" : "none"} />}
             </TouchableOpacity>
           )}
 
@@ -219,9 +201,8 @@ export default function ChatScreen() {
             <Text style={styles.messageText}>{item.content}</Text>
           </View>
 
-          {/* User일 경우 오른쪽에 아이콘/버튼 배치 */}
           {isUser && (
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => item.feedback ? handleCloseExtra(item.id, 'feedback') : handleRequestFeedback(item.id, item.content)}
               style={styles.actionIconBtn}
               disabled={item.isLoadingExtra}
@@ -231,9 +212,6 @@ export default function ChatScreen() {
           )}
         </View>
 
-        {/* 2. 추가 정보 영역 (피드백 or 추천) */}
-        
-        {/* (A) 사용자 문법 피드백 (User 메시지 하단) */}
         {isUser && item.feedback && (
           <View style={styles.feedbackContainer}>
             <View style={styles.feedbackHeader}>
@@ -246,7 +224,6 @@ export default function ChatScreen() {
           </View>
         )}
 
-        {/* (B) 추천 답변 (Assistant 메시지 하단) */}
         {!isUser && item.suggestion && (
           <View style={styles.suggestionContainer}>
             <View style={styles.feedbackHeader}>
@@ -256,11 +233,6 @@ export default function ChatScreen() {
               </TouchableOpacity>
             </View>
             <Text style={styles.suggestionText}>{item.suggestion}</Text>
-            
-            {/* 추천 답변을 입력창에 바로 넣는 기능 (옵션) */}
-            {/* <TouchableOpacity style={styles.copyBtn} onPress={() => setInput('추천 답변 중 하나 복사 로직')}>
-              <Text style={styles.copyBtnText}>입력창에 복사</Text>
-            </TouchableOpacity> */}
           </View>
         )}
 
@@ -308,7 +280,8 @@ export default function ChatScreen() {
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}>
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
+      >
         <View style={styles.inputContainer}>
           <View style={styles.inputWrapper}>
             <TextInput
@@ -328,7 +301,8 @@ export default function ChatScreen() {
           <TouchableOpacity
             onPress={handleFormSubmit}
             disabled={!input.trim() || isLoading}
-            style={[styles.sendButton, (!input.trim() || isLoading) && styles.disabledButton]}>
+            style={[styles.sendButton, (!input.trim() || isLoading) && styles.disabledButton]}
+          >
             <Send color="#fff" size={18} />
           </TouchableOpacity>
         </View>
@@ -337,50 +311,101 @@ export default function ChatScreen() {
   );
 }
 
+// ==========================
+// 🎨 스타일 통일 (너가 준 화면과 동일)
+// ==========================
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#e8eaf0' },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    padding: 16, backgroundColor: '#d5d8e0', borderBottomWidth: 1, borderBottomColor: '#c5c8d4',
+  container: { 
+    flex: 1, 
+    backgroundColor: '#e8eaf0'
   },
+
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    backgroundColor: '#d5d8e0',
+    borderBottomWidth: 1,
+    borderBottomColor: '#c5c8d4',
+  },
+
   headerTitle: { fontSize: 16, fontWeight: '600', color: '#2c303c' },
   iconButton: { padding: 4 },
   modeButtonText: { fontSize: 12, color: '#2c303c', textDecorationLine: 'underline' },
+
   listContent: { padding: 16, paddingBottom: 20 },
+
   mascotContainer: { alignItems: 'center', marginVertical: 16 },
   mascotCircle: {
-    width: 128, height: 128, backgroundColor: 'white', borderRadius: 64, borderWidth: 4,
-    borderColor: '#2c303c', justifyContent: 'center', alignItems: 'center', overflow: 'hidden',
+    width: 128,
+    height: 128,
+    backgroundColor: '#ffffff',
+    borderRadius: 64,
+    borderWidth: 4,
+    borderColor: '#2c303c',
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
   },
-  
-  // 메시지 로우 스타일 수정 (버튼 배치를 위해)
+
   messageRow: { marginBottom: 4, flexDirection: 'row', alignItems: 'flex-end' },
   userRow: { justifyContent: 'flex-end' },
   assistantRow: { justifyContent: 'flex-start' },
-  
+
   bubble: { maxWidth: '70%', padding: 12, borderRadius: 16 },
-  userBubble: { backgroundColor: '#b8bcc9', borderBottomRightRadius: 4 },
-  assistantBubble: { backgroundColor: '#d5d8e0', borderBottomLeftRadius: 4 },
+
+  userBubble: { 
+    backgroundColor: '#d5d8e0',
+    borderBottomRightRadius: 4,
+  },
+
+  assistantBubble: { 
+    backgroundColor: '#e1e3e8',
+    borderBottomLeftRadius: 4,
+  },
+
   messageText: { color: '#2c303c', fontSize: 14, lineHeight: 20 },
-  
+
   loadingContainer: { alignItems: 'flex-start', marginBottom: 10 },
+
   inputContainer: {
-    flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: '#d5d8e0',
-    borderTopWidth: 1, borderTopColor: '#c5c8d4',
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#d5d8e0',
+    borderTopWidth: 1,
+    borderTopColor: '#c5c8d4',
   },
+
   inputWrapper: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff',
-    borderRadius: 24, paddingHorizontal: 16, height: 44, marginRight: 8,
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 24,
+    paddingHorizontal: 16,
+    height: 44,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#c5c8d4',
   },
+
   input: { flex: 1, color: '#2c303c', fontSize: 14, padding: 0 },
+
   micButton: { padding: 4 },
+
   sendButton: {
-    width: 44, height: 44, borderRadius: 22, backgroundColor: '#2c303c',
-    justifyContent: 'center', alignItems: 'center',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#2c303c',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
+
   disabledButton: { opacity: 0.5 },
 
-  // === [추가된 스타일] ===
   actionIconBtn: {
     padding: 8,
     marginHorizontal: 4,
@@ -388,54 +413,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  // 피드백 박스 (회색)
   feedbackContainer: {
     alignSelf: 'flex-end',
-    backgroundColor: '#F3F4F6', // 연한 회색
+    backgroundColor: '#f3f4f6',
     width: '85%',
     padding: 12,
     borderRadius: 12,
     marginTop: 4,
     marginRight: 10,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#e5e7eb',
   },
+
   feedbackHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 6,
   },
-  feedbackTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#4B5563',
-  },
-  feedbackText: {
-    fontSize: 13,
-    color: '#374151',
-    lineHeight: 18,
-  },
 
-  // 추천 박스 (노란색)
+  feedbackTitle: { fontSize: 12, fontWeight: '700', color: '#4b5563' },
+  feedbackText: { fontSize: 13, color: '#374151', lineHeight: 18 },
+
   suggestionContainer: {
     alignSelf: 'flex-start',
-    backgroundColor: '#FFFBEB', // 연한 노란색 (Tailwind amber-50)
+    backgroundColor: '#fff9e6',
     width: '85%',
     padding: 12,
     borderRadius: 12,
     marginTop: 4,
     marginLeft: 10,
     borderWidth: 1,
-    borderColor: '#FCD34D', // 노란색 테두리
+    borderColor: '#ffe8a3',
   },
-  suggestionTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#B45309', // 진한 호박색
-  },
-  suggestionText: {
-    fontSize: 13,
-    color: '#92400E',
-    lineHeight: 18,
-  },
+
+  suggestionTitle: { fontSize: 12, fontWeight: '700', color: '#b37a00' },
+  suggestionText: { fontSize: 13, color: '#8a5a00', lineHeight: 18 },
 });

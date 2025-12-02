@@ -1,5 +1,4 @@
 // src/screens/HomeScreen.tsx
-
 import React from 'react';
 import {
   View,
@@ -7,9 +6,9 @@ import {
   StyleSheet,
   Image,
   Pressable,
-  SafeAreaView,
   ScrollView,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import PandaIcon from '../components/PandaIcon';
 
 type Props = {
@@ -20,11 +19,19 @@ type Props = {
 const pandaImg = require('../assets/images/panda-mascot.png');
 
 export default function HomeScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
+
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={[]}>
       <View style={styles.root}>
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            {
+              paddingTop: insets.top + 32,    // ← 화면 전체를 자연스럽게 아래로 내리는 핵심 부분
+              paddingBottom: 100 + insets.bottom,
+            },
+          ]}
           showsVerticalScrollIndicator={false}
         >
           {/* Header - LING(팬다)MATE 로고 */}
@@ -106,13 +113,16 @@ export default function HomeScreen({ navigation }: Props) {
               </Pressable>
             </View>
           </View>
-          {/* ← chatCard 닫힘 */}
         </ScrollView>
-        {/* ← ScrollView 닫힘 */}
 
         {/* Bottom Navigation */}
         <View style={styles.bottomNav}>
-          <View style={styles.bottomNavInner}>
+          <View
+            style={[
+              styles.bottomNavInner,
+              { paddingBottom: insets.bottom },
+            ]}
+          >
             <Pressable style={styles.bottomNavItem}>
               <Text style={styles.bottomNavIcon}>🏠</Text>
               <Text style={styles.bottomNavLabelActive}>홈</Text>
@@ -120,10 +130,7 @@ export default function HomeScreen({ navigation }: Props) {
 
             <Pressable
               style={styles.bottomNavItem}
-              onPress={() => {
-                console.log('통계 탭 클릭');
-                navigation.navigate('StudyStats');
-              }}
+              onPress={() => navigation.navigate('StudyStats')}
             >
               <Text style={styles.bottomNavIconInactive}>📊</Text>
               <Text style={styles.bottomNavLabelInactive}>통계</Text>
@@ -131,9 +138,7 @@ export default function HomeScreen({ navigation }: Props) {
 
             <Pressable
               style={styles.bottomNavItem}
-              onPress={() => {
-                navigation.navigate('Profile');
-              }}
+              onPress={() => navigation.navigate('Profile')}
             >
               <Text style={styles.bottomNavIconInactive}>👤</Text>
               <Text style={styles.bottomNavLabelInactive}>마이</Text>
@@ -154,10 +159,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 24,
     paddingHorizontal: 16,
-    paddingBottom: 100, // bottom nav 높이만큼 여유
   },
+
   headerWrapper: {
     alignItems: 'center',
     marginBottom: 24,
@@ -172,6 +176,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#2c303c',
   },
+
   greeting: {
     marginBottom: 20,
   },
@@ -185,6 +190,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6b7280',
   },
+
   todayCard: {
     backgroundColor: '#d5d8e0',
     borderRadius: 24,
@@ -197,6 +203,7 @@ const styles = StyleSheet.create({
     color: '#2c303c',
     marginBottom: 16,
   },
+
   pandaProgressRow: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -230,6 +237,7 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     textAlign: 'center',
   },
+
   chatCard: {
     backgroundColor: '#d5d8e0',
     borderRadius: 24,
@@ -249,6 +257,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   chatTextBlock: {
     alignItems: 'center',
     marginBottom: 16,
@@ -263,6 +272,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6b7280',
   },
+
   chatButtonsRow: {
     flexDirection: 'row',
     gap: 12,
@@ -281,6 +291,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     fontSize: 15,
   },
+
   bottomNav: {
     position: 'absolute',
     left: 0,
@@ -291,12 +302,13 @@ const styles = StyleSheet.create({
     borderTopColor: '#3d424f',
   },
   bottomNavInner: {
-    height: 64,
+    minHeight: 64,
     paddingHorizontal: 16,
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
   },
+
   bottomNavItem: {
     alignItems: 'center',
     gap: 2,

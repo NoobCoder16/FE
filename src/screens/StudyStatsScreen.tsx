@@ -5,10 +5,10 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   Pressable,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import PandaIcon from '../components/PandaIcon';
 
 type Props = {
@@ -16,10 +16,15 @@ type Props = {
 };
 
 export default function StudyStatsScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.root}>
-        {/* 상단 헤더 */}
+    <SafeAreaView
+      style={styles.safeArea}
+      edges={['left', 'right', 'bottom']} // 상단은 insets.top으로 직접 처리
+    >
+      <View style={[styles.root, { paddingTop: insets.top }]}>
+        {/* ===== 상단 헤더 (공통 스타일) ===== */}
         <View style={styles.header}>
           <Pressable
             style={styles.backButton}
@@ -27,7 +32,11 @@ export default function StudyStatsScreen({ navigation }: Props) {
           >
             <Text style={styles.backIcon}>‹</Text>
           </Pressable>
+
           <Text style={styles.headerTitle}>학습 통계</Text>
+
+          {/* 오른쪽 정렬용 더미 뷰 */}
+          <View style={{ width: 32 }} />
         </View>
 
         <ScrollView
@@ -114,40 +123,31 @@ const styles = StyleSheet.create({
     backgroundColor: '#E5E7ED',
   },
 
-  // ===== 헤더 =====
+  // ===== 헤더 (다른 화면과 통일) =====
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#d1d5db',
+    backgroundColor: '#d5d8e0',
+    borderBottomWidth: 1,
+    borderBottomColor: '#c5c8d4',
   },
   backButton: {
     width: 32,
     height: 32,
-    borderRadius: 16,
     justifyContent: 'center',
-    alignItems: 'center',
   },
   backIcon: {
     fontSize: 22,
-    color: '#111827',
+    color: '#2c303c',
   },
   headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    marginRight: 32, // back 버튼 자리만큼 보정
     fontSize: 18,
     fontWeight: '600',
-    color: '#111827',
-  },
-  headerRightBox: {
-    width: 24,
-    height: 22,
-    backgroundColor: '#111827',
-    borderRadius: 4,
+    color: '#2c303c',
+    textAlign: 'center',
   },
 
   scroll: {
@@ -213,9 +213,8 @@ const styles = StyleSheet.create({
     height: 80,
     backgroundColor: 'rgba(191,195,208,0.5)',
     borderRadius: 15,
-    justifyContent: 'center',   // 카드 안에서 정중앙 배치
-    alignItems: 'center',       // 카드 안에서 정중앙 배치
+    justifyContent: 'center',
+    alignItems: 'center',
     overflow: 'hidden',
   },
 });
-

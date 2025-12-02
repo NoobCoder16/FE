@@ -5,10 +5,10 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TextInput,
   Pressable,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import PandaIcon from '../components/PandaIcon';
 
 type Props = {
@@ -17,11 +17,14 @@ type Props = {
 
 export default function DeleteAccountScreen({ navigation }: Props) {
   const [password, setPassword] = useState('');
+  const insets = useSafeAreaInsets();   // ⭐ 추가
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-
+    <SafeAreaView
+      style={styles.safeArea}
+      edges={['left', 'right', 'bottom']}   // top 제거
+    >
+      <View style={[styles.container, { paddingTop: insets.top }]}>
         {/* 뒤로가기 */}
         <Pressable onPress={() => navigation.goBack()}>
           <Text style={styles.backArrow}>←</Text>
@@ -46,7 +49,6 @@ export default function DeleteAccountScreen({ navigation }: Props) {
             onChangeText={setPassword}
           />
 
-          {/* 🔥 탈퇴 버튼 → DeleteAccountModal로 이동 */}
           <Pressable
             style={styles.deleteButton}
             onPress={() => navigation.navigate('DeleteAccountModal')}
@@ -67,7 +69,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    padding: 24,
+    paddingHorizontal: 24,
   },
 
   backArrow: {
