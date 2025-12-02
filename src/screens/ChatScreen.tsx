@@ -200,6 +200,11 @@ export default function ChatScreen() {
     ]);
   };
 
+  const handleEndChat = () => {
+    // 나중에 여기서 대화 내용 저장 → Review로 넘기는 로직도 붙이면 됨
+    navigation.navigate('Review');
+  };
+
   const handleFormSubmit = async () => {
     if (!input.trim() || isLoading) return;
 
@@ -341,9 +346,15 @@ export default function ChatScreen() {
             <ChevronLeft color="#2c303c" size={24} />
           </TouchableOpacity>
 
-          <Text style={styles.headerTitle}>
-            {mode === 'casual' ? '😊 Casual Mode' : '🎩 Formal Mode'}
-          </Text>
+          <View style={styles.headerMiddle}>
+            <TouchableOpacity onPress={handleEndChat}>
+              <Text style={styles.endChatText}>회화 종료</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.headerTitle}>
+              {mode === 'casual' ? '😊 Casual Mode' : '🎩 Formal Mode'}
+            </Text>
+          </View>
 
           <TouchableOpacity onPress={handleModeChange}>
             <Text style={styles.modeButtonText}>모드 변경</Text>
@@ -430,15 +441,31 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-    backgroundColor: '#d5d8e0',
-    borderBottomWidth: 1,
-    borderBottomColor: '#c5c8d4',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  paddingHorizontal: 16,
+  paddingBottom: 8,
+  backgroundColor: '#d5d8e0',
+  borderBottomWidth: 1,
+  borderBottomColor: '#c5c8d4',
   },
-  headerTitle: { fontSize: 16, fontWeight: '600', color: '#2c303c' },
+  headerMiddle: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    columnGap: 12, // 안 되면 대신 marginRight / marginLeft 써도 됨
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2c303c',
+  },
+  endChatText: {
+    fontSize: 12,
+    color: '#2c303c',
+    textDecorationLine: 'underline',
+  },
   iconButton: { padding: 4 },
   modeButtonText: {
     fontSize: 12,
