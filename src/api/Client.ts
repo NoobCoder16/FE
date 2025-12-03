@@ -1,4 +1,4 @@
-// src/api/client.ts
+// src/api/Client.ts
 
 import axios from 'axios';
 import { Platform } from 'react-native';
@@ -7,21 +7,7 @@ import { Platform } from 'react-native';
 const PORT = '8000'; // Python(FastAPI) 서버 포트 (필요시 변경)
 
 const BASE_URL = Platform.select({
-  android: `http://10.0.2.2:${PORT}`, 
-  ios: `http://localhost:${PORT}`,
-});
-
-const client = axios.create({
-// src/api/client.ts
-
-import axios from 'axios';
-import { Platform } from 'react-native';
-
-
-const PORT = '8000'; // Python(FastAPI) 서버 포트 (필요시 변경)
-
-const BASE_URL = Platform.select({
-  android: `http://10.0.2.2:${PORT}`, 
+  android: `http://10.0.2.2:${PORT}`,
   ios: `http://localhost:${PORT}`,
 });
 

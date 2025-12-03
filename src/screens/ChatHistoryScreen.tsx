@@ -1,11 +1,13 @@
 // src/screens/ChatHistoryScreen.tsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Pressable,
   FlatList,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -14,45 +16,70 @@ import {
   Clock,
   MoreHorizontal,
 } from 'lucide-react-native';
-
-type ChatItem = {
-  id: string;
-  title: string;
-  turns: number;      // 대화 턴 수
-  timeAgo: string;    // "5 min ago" 같은 표시
-};
-
-// 일단 더미 데이터 (백엔드 붙이면 여기만 서버 데이터로 교체)
-const MOCK_CHATS: ChatItem[] = [
-  { id: '1', title: 'In the public places', turns: 13, timeAgo: '5 min ago' },
-  { id: '2', title: 'What is the reason of...', turns: 4, timeAgo: '22 min ago' },
-  { id: '3', title: 'How are you feeling t...', turns: 20, timeAgo: '1 hr ago' },
-  { id: '4', title: 'Hi, How can I help yo...', turns: 18, timeAgo: '2 hrs ago' },
-  { id: '5', title: 'What is the point of li...', turns: 7, timeAgo: '2 hrs ago' },
-  { id: '6', title: "Go shawty It's your bi...", turns: 12, timeAgo: '3 hrs ago' },
-];
+import { conversationApi } from '../api/Services';
+import { ConversationHistoryItem } from '../types/api';
 
 type Props = {
   navigation: any;
 };
 
 export default function ChatHistoryScreen({ navigation }: Props) {
+  const [chats, setChats] = useState<ConversationHistoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchHistory = async () => {
+    try {
+      setLoading(true);
+      const res = await conversationApi.getHistory();
+      if (res.data.success && res.data.data) {
+        setChats(res.data.data);
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Error', '대화 내역을 불러오지 못했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
   const handleBack = () => {
     navigation.goBack();
   };
 
-  const handlePressItem = (item: ChatItem) => {
+  const handlePressItem = (item: ConversationHistoryItem) => {
     // 여기서 특정 대화 id를 회화 스크립트 화면으로 넘김
-    navigation.navigate('Script', { chatId: item.id });
+    navigation.navigate('Script', { chatId: item.sessionId });
   };
 
-  const handleClearAll = () => {
-    // TODO: 백엔드에 전체 삭제 API 호출 + 상태 초기화
-    // 일단은 alert 정도만
-    // Alert.alert('알림', '대화 내역 비우기 기능은 백엔드 연동 후 구현 예정입니다.');
+  const handleClearAll = async () => {
+    Alert.alert(
+      '대화 내역 삭제',
+      '모든 대화 내역을 삭제하시겠습니까?',
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '삭제',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await conversationApi.deleteAllConversations();
+              setChats([]);
+              Alert.alert('완료', '모든 대화 내역이 삭제되었습니다.');
+            } catch (error) {
+              console.error(error);
+              Alert.alert('Error', '삭제 중 오류가 발생했습니다.');
+            }
+          },
+        },
+      ]
+    );
   };
 
-  const renderItem = ({ item }: { item: ChatItem }) => (
+  const renderItem = ({ item }: { item: ConversationHistoryItem }) => (
     <Pressable style={styles.card} onPress={() => handlePressItem(item)}>
       <View style={styles.cardInner}>
         <Text style={styles.cardTitle} numberOfLines={1}>
@@ -62,12 +89,12 @@ export default function ChatHistoryScreen({ navigation }: Props) {
         <View style={styles.cardMetaRow}>
           <View style={styles.metaGroup}>
             <Users size={14} color="#6B7280" />
-            <Text style={styles.metaText}>{item.turns}</Text>
+            <Text style={styles.metaText}>{item.messageCount} msgs</Text>
           </View>
 
           <View style={[styles.metaGroup, { marginLeft: 12 }]}>
             <Clock size={14} color="#6B7280" />
-            <Text style={styles.metaText}>{item.timeAgo}</Text>
+            <Text style={styles.metaText}>{new Date(item.createdAt).toLocaleDateString()}</Text>
           </View>
 
           <View style={{ flex: 1 }} />
@@ -92,17 +119,26 @@ export default function ChatHistoryScreen({ navigation }: Props) {
 
         {/* 상단 타이틀 + 서브텍스트 */}
         <View style={styles.titleBlock}>
-          <Text style={styles.chatsLabel}>Chats ({MOCK_CHATS.length})</Text>
+          <Text style={styles.chatsLabel}>Chats ({chats.length})</Text>
         </View>
 
         {/* 리스트 */}
-        <FlatList
-          data={MOCK_CHATS}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-        />
+        {loading ? (
+          <ActivityIndicator size="large" color="#2c303c" style={{ marginTop: 20 }} />
+        ) : (
+          <FlatList
+            data={chats}
+            keyExtractor={(item) => item.sessionId}
+            renderItem={renderItem}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <Text style={{ textAlign: 'center', marginTop: 20, color: '#6B7280' }}>
+                대화 내역이 없습니다.
+              </Text>
+            }
+          />
+        )}
 
         {/* 하단 "대화 내역 비우기" 버튼 */}
         <View style={styles.bottom}>
