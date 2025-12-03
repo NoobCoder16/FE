@@ -147,3 +147,9 @@ export interface Phrase {
 export interface NotificationSettings {
     enabled: boolean;
 }
+
+// === 9. Home ===
+export interface HomeStatusResponse {
+    todayConversationCount: number;          // 오늘 대화 횟수
+    subscription: 'basic' | 'premium';       // 현재 구독 상태
+}

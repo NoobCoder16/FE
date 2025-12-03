@@ -1,5 +1,5 @@
 // src/screens/HomeScreen.tsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import PandaIcon from '../components/PandaIcon';
+import { homeApi } from '../api/Services';
 
 type Props = {
   navigation: any;
@@ -17,9 +18,54 @@ type Props = {
 
 // src/screens → src/assets 로 가는 경로: ../assets/...
 const pandaImg = require('../assets/images/panda-mascot.png');
+const DAILY_LIMIT = 3; // 하루 최대 학습(스탬프) 횟수
 
 export default function HomeScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
+
+
+  // 홈 상태
+  const [todayCount, setTodayCount] = useState<number>(0);
+  const [subscription, setSubscription] =
+    useState<'basic' | 'premium'>('basic');
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    const fetchHomeStatus = async () => {
+      try {
+        const res = await homeApi.getStatus();
+        const data = res.data.data; // ApiResponse<T> 구조에서 data 꺼내기
+
+        if (data) {
+          setTodayCount(data.todayConversationCount);
+          setSubscription(data.subscription);
+        }
+      } catch (error) {
+        console.error('홈 상태 불러오기 실패:', error);
+        // 실패 시 기본값(0회, basic) 유지
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchHomeStatus();
+  }, []);
+
+  // 판다 스탬프 & 텍스트 계산
+  const isPremium = subscription === 'premium';
+  const filledCount = Math.min(todayCount, DAILY_LIMIT);
+
+  let progressText = '';
+  if (isLoading) {
+    progressText = '불러오는 중...';
+  } else if (isPremium) {
+    // 프리미엄: 실제 학습 횟수 그대로 표시
+    progressText = `${todayCount}회 학습`;
+  } else {
+    // 일반 유저: 남은 횟수 (최대 3회)
+    const remaining = Math.max(DAILY_LIMIT - todayCount, 0);
+    progressText = `${remaining}회 남음`;
+  }
 
   return (
     <SafeAreaView style={styles.safeArea} edges={[]}>
@@ -57,21 +103,30 @@ export default function HomeScreen({ navigation }: Props) {
 
             {/* Panda progress */}
             <View style={styles.pandaProgressRow}>
-              <View style={styles.pandaCircle}>
-                <Image source={pandaImg} style={styles.pandaIcon} />
-              </View>
-              <View style={styles.pandaCircle}>
-                <Image source={pandaImg} style={styles.pandaIcon} />
-              </View>
-              <View style={[styles.pandaCircle, styles.pandaCircleDisabled]}>
-                <Image
-                  source={pandaImg}
-                  style={[styles.pandaIcon, styles.pandaIconDim]}
-                />
-              </View>
+              {[0, 1, 2].map((idx) => {
+                const isFilled = idx < filledCount;
+
+                return (
+                  <View
+                    key={idx}
+                    style={[
+                      styles.pandaCircle,
+                      !isFilled && styles.pandaCircleDisabled,
+                    ]}
+                  >
+                    <Image
+                      source={pandaImg}
+                      style={[
+                        styles.pandaIcon,
+                        !isFilled && styles.pandaIconDim,
+                      ]}
+                    />
+                  </View>
+                );
+              })}
             </View>
 
-            <Text style={styles.progressText}>1회 남음</Text>
+            <Text style={styles.progressText}>{progressText}</Text>
           </View>
 
           {/* AI와 회화 시작 카드 */}

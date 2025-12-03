@@ -19,6 +19,7 @@ import {
   UserStats,
   Phrase,
   NotificationSettings,
+  HomeStatusResponse,
 } from '../types/api';
 
 // === 1. 사용자 인증 및 프로필 (Auth & Profile) ===
@@ -194,4 +195,14 @@ export const notificationApi = {
     client.put<ApiResponse<NotificationSettings>>('/api/notifications/settings', {
       enabled,
     }),
+};
+
+// === 9. Home ===
+export const homeApi = {
+  /**
+   * 홈 화면 상태
+   * GET /api/home/status
+   */
+  getStatus: () =>
+    client.get<ApiResponse<HomeStatusResponse>>('/api/home/status'),
 };
