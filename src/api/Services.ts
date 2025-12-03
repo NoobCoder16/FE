@@ -1,83 +1,197 @@
 import client from './Client';
+import {
+  ApiResponse,
+  AuthMeResponse,
+  UserProfile,
+  UpdateProfileRequest,
+  StartSessionResponse,
+  FinishSessionRequest,
+  FinishSessionResponse,
+  ConversationHistoryItem,
+  ConversationDetail,
+  SubscriptionOptionsResponse,
+  SubscribeResponse,
+  CancelSubscriptionResponse,
+  AiChatResponse,
+  AiFeedbackResponse,
+  TtsResponse,
+  ConversationSettings,
+  UserStats,
+  Phrase,
+  NotificationSettings,
+} from '../types/api';
 
-// === 1. 대화 세션 관리 (백엔드) ===
+// === 1. 사용자 인증 및 프로필 (Auth & Profile) ===
+export const authApi = {
+  /**
+   * 내 인증 정보 조회
+   * GET /api/auth/me
+   */
+  getMe: () => client.get<ApiResponse<AuthMeResponse>>('/api/auth/me'),
+
+  /**
+   * 프로필 조회
+   * GET /api/user/profile
+   */
+  getProfile: () => client.get<ApiResponse<UserProfile>>('/api/user/profile'),
+
+  /**
+   * 프로필 수정
+   * PUT /api/user/profile
+   */
+  updateProfile: (data: UpdateProfileRequest) =>
+    client.put<ApiResponse<UserProfile>>('/api/user/profile', data),
+};
+
+// === 2. 대화 관리 (Conversation) ===
 export const conversationApi = {
   /**
-   * 대화 세션 시작 (세션 ID 발급)
+   * 세션 생성
    * POST /api/conversation/start
    */
-  startSession: () => client.post('/api/conversation/start'),
+  startSession: () =>
+    client.post<ApiResponse<StartSessionResponse>>('/api/conversation/start'),
 
   /**
-   * 대화 세션 종료 및 스크립트 저장
+   * 대화 종료 + 전체 스크립트 업로드
    * POST /api/conversation/finish
    */
-  finishSession: (sessionId: string, script: any[]) =>
-    client.post('/api/conversation/finish', { sessionId, script }),
+  finishSession: (data: FinishSessionRequest) =>
+    client.post<ApiResponse<FinishSessionResponse>>('/api/conversation/finish', data),
+
+  /**
+   * 대화 내역 조회
+   * GET /api/conversation/history
+   */
+  getHistory: (page = 1, limit = 20) =>
+    client.get<ApiResponse<ConversationHistoryItem[]>>('/api/conversation/history', {
+      params: { page, limit },
+    }),
+
+  /**
+   * 특정 대화 조회
+   * GET /api/conversation/:sessionId
+   */
+  getConversation: (sessionId: string) =>
+    client.get<ApiResponse<ConversationDetail>>(`/api/conversation/${sessionId}`),
+
+  /**
+   * 대화 삭제
+   * DELETE /api/conversation/delete
+   */
+  deleteConversation: (sessionId: string) =>
+    client.delete<ApiResponse<void>>('/api/conversation/delete', {
+      data: { sessionId },
+    }),
+
+  /**
+   * 전체 대화 삭제
+   * DELETE /api/conversation/delete
+   */
+  deleteAllConversations: () =>
+    client.delete<ApiResponse<void>>('/api/conversation/delete', {
+      data: { all: true },
+    }),
 };
-// AI 서버 API 서비스
+
+// === 3. 구독 (Subscription) ===
+export const subscriptionApi = {
+  /**
+   * 구독 옵션 조회
+   * GET /api/subscription/options
+   */
+  getOptions: () =>
+    client.get<ApiResponse<SubscriptionOptionsResponse>>('/api/subscription/options'),
+
+  /**
+   * 구독 시작/변경
+   * POST /api/subscription/subscribe
+   */
+  subscribe: (plan: 'basic' | 'premium') =>
+    client.post<ApiResponse<SubscribeResponse>>('/api/subscription/subscribe', { plan }),
+
+  /**
+   * 구독 취소
+   * POST /api/subscription/cancel
+   */
+  cancel: () =>
+    client.post<ApiResponse<CancelSubscriptionResponse>>('/api/subscription/cancel'),
+};
+
+// === 4. AI & 음성 (AI) ===
 export const aiApi = {
   /**
-   * 1. 채팅 메시지 전송
-   * AI 서버가 히스토리를 관리하므로 text만 보내면 됨.
+   * AI 텍스트 응답
+   * POST /api/ai/chat
    */
-  chat: (text: string, userId: string, difficulty = 'medium', register = 'casual') => 
-    client.post('/api/ai/chat', { 
-      text, 
-      userId, 
-      difficulty, 
-      register 
+  chat: (text: string) =>
+    client.post<ApiResponse<AiChatResponse>>('/api/ai/chat', { text }),
+
+  /**
+   * AI 피드백 - 의미 + 예문 제공
+   * POST /api/ai/feedback
+   */
+  getFeedback: (text: string) =>
+    client.post<ApiResponse<AiFeedbackResponse>>('/api/ai/feedback', { text }),
+
+  /**
+   * TTS - 텍스트 -> 오디오 변환
+   * POST /api/ai/tts
+   */
+  tts: (text: string, voice?: string) =>
+    client.post<ApiResponse<TtsResponse>>('/api/ai/tts', { text, voice }),
+};
+
+// === 5. 회화 설정 (Conversation Settings) ===
+export const settingsApi = {
+  /**
+   * 설정 조회
+   * GET /api/conversation/settings
+   */
+  getSettings: () =>
+    client.get<ApiResponse<ConversationSettings>>('/api/conversation/settings'),
+
+  /**
+   * 설정 변경
+   * PUT /api/conversation/settings
+   */
+  updateSettings: (data: Partial<ConversationSettings>) =>
+    client.put<ApiResponse<ConversationSettings>>('/api/conversation/settings', data),
+};
+
+// === 6. 학습 통계 (Stats) ===
+export const statsApi = {
+  /**
+   * 통계 조회
+   * GET /api/stats
+   */
+  getStats: () => client.get<ApiResponse<UserStats>>('/api/stats'),
+};
+
+// === 7. 스크립트(암기 문장) (Phrases) ===
+export const phrasesApi = {
+  /**
+   * 기본 문장 조회
+   * GET /api/phrases
+   */
+  getPhrases: () => client.get<ApiResponse<Phrase[]>>('/api/phrases'),
+};
+
+// === 8. 푸시 알림 (Notifications) ===
+export const notificationApi = {
+  /**
+   * 알림 설정 조회
+   * GET /api/notifications/settings
+   */
+  getSettings: () =>
+    client.get<ApiResponse<NotificationSettings>>('/api/notifications/settings'),
+
+  /**
+   * 알림 설정 변경
+   * PUT /api/notifications/settings
+   */
+  updateSettings: (enabled: boolean) =>
+    client.put<ApiResponse<NotificationSettings>>('/api/notifications/settings', {
+      enabled,
     }),
-
-  /**
-   * 2. 문법 피드백 요청 (User 메시지용)
-   */
-  getFeedback: (text: string) => 
-    client.post('/api/ai/feedback', { text }),
-
-  /**
-   * 3. 답변 추천 요청 (Assistant 메시지용)
-   * AI 서버 명세: ai_text와 userId 필요
-   */
-  getExampleReply: (aiText: string, userId: string) => 
-    client.post('/api/ai/example-reply', { 
-      ai_text: aiText, 
-      userId 
-    }),
-
-  /**
-   * 4. 대화 세션 초기화 
-   */
-  resetConversation: (userId: string) => 
-    client.post('/api/conversation/reset', { userId }),
-  /**
-   * 5. 대화 내역에서 회화 표현 추출
-   */ 
-  extractKeyPhrases: (history: any[]) => {
-    // 대화 내역을 문자열로 변환
-    const chatContext = history.map(m => `${m.role}: ${m.content}`).join('\n');
-    
-    // AI에게 요청할 프롬프트
-    const prompt = `
-      Analyze the following conversation and extract 5 useful English expressions for learning.
-      Provide the Korean translation for each.
-      
-      Conversation:
-      ${chatContext}
-
-      Format: JSON Array
-      [
-        {"en": "English phrase", "kr": "Korean meaning"},
-        ...
-      ]
-      Do not include any other text, only the JSON.
-    `;
-
-    // 기존 chat API 재활용 )
-    // 여기서는 text로 프롬프트를 보내고 응답을 파싱하는 방식 사용
-    return client.post('/api/ai/chat', { 
-      text: prompt,
-      userId: 'system_extractor' // 특수 목적용 ID
-    });
-  }
 };
