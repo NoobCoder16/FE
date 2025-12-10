@@ -23,6 +23,22 @@ type Props = {
   navigation: any;
 };
 
+// createdAt → "5 min ago" 같은 문자열로 변환 (원하면 나중에 교체해서 사용 가능)
+function formatTimeAgo(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+
+  const diffMs = Date.now() - date.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffHour = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHour / 24);
+
+  if (diffMin < 1) return 'just now';
+  if (diffMin < 60) return `${diffMin} min ago`;
+  if (diffHour < 24) return `${diffHour} hr${diffHour > 1 ? 's' : ''} ago`;
+  return `${diffDay} day${diffDay > 1 ? 's' : ''} ago`;
+}
+
 export default function ChatHistoryScreen({ navigation }: Props) {
   const [chats, setChats] = useState<ConversationHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,9 +46,20 @@ export default function ChatHistoryScreen({ navigation }: Props) {
   const fetchHistory = async () => {
     try {
       setLoading(true);
+
       const res = await conversationApi.getHistory();
+
       if (res.data.success && res.data.data) {
-        setChats(res.data.data);
+        const raw = res.data.data.history;  // ← 서버의 history 배열
+
+        const mapped = raw.map(item => ({
+          sessionId: String(item.sessionId),
+          title: item.script.length > 0 ? item.script[0].text : "새 대화",
+          createdAt: item.startTime,
+          messageCount: item.script.length,
+        }));
+
+        setChats(mapped);
       }
     } catch (error) {
       console.error(error);
@@ -52,10 +79,12 @@ export default function ChatHistoryScreen({ navigation }: Props) {
 
   const handlePressItem = (item: ConversationHistoryItem) => {
     // 여기서 특정 대화 id를 회화 스크립트 화면으로 넘김
-    navigation.navigate('Script', { chatId: item.sessionId });
+    navigation.navigate('Script', { sessionId: item.sessionId });
   };
 
   const handleClearAll = async () => {
+    if (!chats.length) return;
+
     Alert.alert(
       '대화 내역 삭제',
       '모든 대화 내역을 삭제하시겠습니까?',
@@ -73,6 +102,44 @@ export default function ChatHistoryScreen({ navigation }: Props) {
               console.error(error);
               Alert.alert('Error', '삭제 중 오류가 발생했습니다.');
             }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleDeleteItem = async (sessionId: string) => {
+    try {
+      await conversationApi.deleteConversation(sessionId);
+      setChats(prev => prev.filter(c => c.sessionId !== sessionId));
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Error', '삭제 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handlePressMenu = (item: ConversationHistoryItem) => {
+    Alert.alert(
+      '옵션',
+      undefined,
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '삭제',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(
+              '대화 삭제',
+              '선택한 대화를 삭제하시겠습니까?',
+              [
+                { text: '취소', style: 'cancel' },
+                {
+                  text: '삭제',
+                  style: 'destructive',
+                  onPress: () => handleDeleteItem(item.sessionId),
+                },
+              ]
+            );
           },
         },
       ]
@@ -94,12 +161,26 @@ export default function ChatHistoryScreen({ navigation }: Props) {
 
           <View style={[styles.metaGroup, { marginLeft: 12 }]}>
             <Clock size={14} color="#6B7280" />
-            <Text style={styles.metaText}>{new Date(item.createdAt).toLocaleDateString()}</Text>
+            {/* 필요에 따라 formatTimeAgo(item.createdAt)으로 바꿔도 됨 */}
+            <Text style={styles.metaText}>
+              {new Date(item.createdAt).toLocaleDateString()}
+            </Text>
           </View>
 
           <View style={{ flex: 1 }} />
 
-          <MoreHorizontal size={18} color="#9CA3AF" />
+          <View style={{ flex: 1 }} />
+
+          <Pressable
+            hitSlop={10}
+            onPress={(e) => {
+              // 부모 Pressable 이벤트 전파 방지
+              e.stopPropagation();
+              handlePressMenu(item);
+            }}
+          >
+            <MoreHorizontal size={18} color="#9CA3AF" />
+          </Pressable>
         </View>
       </View>
     </Pressable>
@@ -117,23 +198,33 @@ export default function ChatHistoryScreen({ navigation }: Props) {
           <View style={{ width: 24 }} />
         </View>
 
-        {/* 상단 타이틀 + 서브텍스트 */}
+        {/* 상단 타이틀 */}
         <View style={styles.titleBlock}>
           <Text style={styles.chatsLabel}>Chats ({chats.length})</Text>
         </View>
 
         {/* 리스트 */}
         {loading ? (
-          <ActivityIndicator size="large" color="#2c303c" style={{ marginTop: 20 }} />
+          <ActivityIndicator
+            size="large"
+            color="#2c303c"
+            style={{ marginTop: 20 }}
+          />
         ) : (
           <FlatList
             data={chats}
-            keyExtractor={(item) => item.sessionId}
+            keyExtractor={item => item.sessionId}
             renderItem={renderItem}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
-              <Text style={{ textAlign: 'center', marginTop: 20, color: '#6B7280' }}>
+              <Text
+                style={{
+                  textAlign: 'center',
+                  marginTop: 20,
+                  color: '#6B7280',
+                }}
+              >
                 대화 내역이 없습니다.
               </Text>
             }
@@ -142,7 +233,14 @@ export default function ChatHistoryScreen({ navigation }: Props) {
 
         {/* 하단 "대화 내역 비우기" 버튼 */}
         <View style={styles.bottom}>
-          <Pressable style={styles.clearButton} onPress={handleClearAll}>
+          <Pressable
+            style={[
+              styles.clearButton,
+              !chats.length && { opacity: 0.4 },
+            ]}
+            onPress={handleClearAll}
+            disabled={!chats.length}
+          >
             <Text style={styles.clearButtonText}>대화 내역 비우기</Text>
           </Pressable>
         </View>
@@ -244,5 +342,23 @@ const styles = StyleSheet.create({
   clearButtonText: {
     fontSize: 16,
     color: '#111827',
+  },
+
+  // 아래 스타일들은 현재 JSX에선 안 쓰이지만,
+  // 필요하면 위에서 사용할 수 있게 남겨둠.
+  loadingBox: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyBox: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 40,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#6B7280',
   },
 });
