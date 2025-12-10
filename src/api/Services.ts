@@ -1,4 +1,5 @@
 import client from './Client';
+import aiClient from './AiClient';
 import {
   ApiResponse,
   AuthMeResponse,
@@ -20,6 +21,11 @@ import {
   Phrase,
   NotificationSettings,
   HomeStatusResponse,
+  AiResetResponse,
+  SttRecognizeResponse,
+  ExampleReplyResponse,
+  AiReviewResponse,
+  AiAccuracyResponse,
 } from '../types/api';
 
 // === 1. 사용자 인증 및 프로필 (Auth & Profile) ===
@@ -120,27 +126,78 @@ export const subscriptionApi = {
 };
 
 // === 4. AI & 음성 (AI) ===
+// === 4. AI & 음성 (AI) ===
+// AI Service (Python FastAPI)와 직접 통신
 export const aiApi = {
+  /**
+   * 세션 초기화
+   * POST /api/conversation/reset
+   */
+  resetSession: (sessionId?: string) =>
+    aiClient.post<ApiResponse<AiResetResponse>>('/api/conversation/reset', sessionId, {
+      headers: { 'Content-Type': 'text/plain' } // Body가 단순 문자열일 경우
+    }),
+
+  /**
+   * STT - 오디오(PCM) -> 텍스트 변환
+   * POST /api/stt/recognize
+   * Body: RAW PCM bytes (application/octet-stream)
+   */
+  stt: (audioData: any, isBinary = true) =>
+    aiClient.post<ApiResponse<SttRecognizeResponse>>('/api/stt/recognize', audioData, {
+      headers: {
+        'Content-Type': 'application/octet-stream'
+      },
+    }),
+
   /**
    * AI 텍스트 응답
    * POST /api/ai/chat
    */
-  chat: (text: string) =>
-    client.post<ApiResponse<AiChatResponse>>('/api/ai/chat', { text }),
+  chat: (text: string, sessionId?: string) =>
+    aiClient.post<ApiResponse<AiChatResponse>>('/api/ai/chat', { text, sessionId }),
 
   /**
    * AI 피드백 - 의미 + 예문 제공
    * POST /api/ai/feedback
    */
-  getFeedback: (text: string) =>
-    client.post<ApiResponse<AiFeedbackResponse>>('/api/ai/feedback', { text }),
+  getFeedback: (text: string, sessionId?: string) =>
+    aiClient.post<ApiResponse<AiFeedbackResponse>>('/api/ai/feedback', { text, sessionId }),
 
   /**
    * TTS - 텍스트 -> 오디오 변환
    * POST /api/ai/tts
    */
-  tts: (text: string, voice?: string) =>
-    client.post<ApiResponse<TtsResponse>>('/api/ai/tts', { text, voice }),
+  tts: (text: string, accent: 'us' | 'uk' | 'au' = 'us', gender: 'male' | 'female' = 'female') =>
+    aiClient.post<ApiResponse<TtsResponse>>('/api/ai/tts', { text, accent, gender }),
+
+  /**
+   * 예시 답변 생성
+   * POST /api/ai/example-reply
+   */
+  getExampleReply: (aiText: string, sessionId?: string) =>
+    aiClient.post<ApiResponse<ExampleReplyResponse>>('/api/ai/example-reply', { ai_text: aiText, sessionId }),
+
+  /**
+   * 세션 복습 (어려운 단어)
+   * POST /api/ai/review
+   */
+  getReview: (sessionId?: string) =>
+    aiClient.post<ApiResponse<AiReviewResponse>>('/api/ai/review', { sessionId }),
+
+  /**
+   * 정확도 조회
+   * GET /api/stats/accuracy
+   */
+  getAccuracy: (sessionId?: string) =>
+    aiClient.get<ApiResponse<AiAccuracyResponse>>('/api/stats/accuracy', { params: { sessionId } }),
+
+  /**
+   * 전체 히스토리 조회 (세션 클리어)
+   * GET /api/conversation/history
+   */
+  getHistoryAndClear: (sessionId?: string) =>
+    aiClient.get<ApiResponse<any>>('/api/conversation/history', { params: { sessionId } }),
 };
 
 // === 5. 회화 설정 (Conversation Settings) ===

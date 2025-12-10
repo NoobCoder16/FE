@@ -56,21 +56,46 @@ export default function ChatScreen() {
     const [sessionId, setSessionId] = useState<string | null>(null);
     const flatListRef = useRef<FlatList>(null);
 
-    // 1. 세션 시작
+    // 세션 ID 생성 (임의)
     useEffect(() => {
-        const initSession = async () => {
+        // 실제로는 UUID 등을 생성하거나 백엔드에서 받아옴. 여기선 시간 기반.
+        const newSessionId = `s_${Date.now()}`;
+        setSessionId(newSessionId);
+    }, []);
+
+    // 1. AI 세션 초기화 (Python Server)
+    useEffect(() => {
+        const initAiSession = async () => {
+            if (!sessionId) return;
+            try {
+                console.log('Resetting AI Session:', sessionId);
+                await aiApi.resetSession(sessionId);
+            } catch (e) {
+                console.error('Failed to reset AI session:', e);
+            }
+        };
+        initAiSession();
+    }, [sessionId]);
+
+    // 1-2. 백엔드 대화 세션 시작 (Optional: 기존 로직 유지 여부 확인 필요)
+    // 원래 코드에 있던 conversationApi.startSession()이 백엔드 DB에 세션을 만드는 것이라면 유지.
+    useEffect(() => {
+        const initBackEndSession = async () => {
             try {
                 const res = await conversationApi.startSession();
                 if (res.data.success && res.data.data) {
+                    console.log('BackEnd Session Started:', res.data.data.sessionId);
+                    // 만약 백엔드 세션 ID와 AI 세션 ID를 일치시켜야 한다면 여기서 setSessionId를 해야 함.
+                    // 현재는 AI 독립성을 위해 별도로 관리하거나, 백엔드 ID를 AI 세션키로 쓸 수 있음.
+                    // 여기서는 백엔드 ID를 메인 SessionId로 덮어쓰기:
                     setSessionId(res.data.data.sessionId);
-                    console.log('Session Started:', res.data.data.sessionId);
                 }
             } catch (error) {
                 console.error('Failed to start session:', error);
-                Alert.alert('Error', '대화 세션을 시작할 수 없습니다.');
+                // Alert.alert('Error', '대화 세션을 시작할 수 없습니다.'); 
             }
         };
-        initSession();
+        initBackEndSession();
     }, []);
 
     // 스크롤
@@ -92,10 +117,19 @@ export default function ChatScreen() {
             ),
         );
         try {
-            const res = await aiApi.getFeedback(content);
+            // sessionId 전달
+            const res = await aiApi.getFeedback(content, sessionId || undefined);
             if (res.data.success && res.data.data) {
-                const { meaning, examples } = res.data.data;
-                const feedbackText = `[Meaning]: ${meaning}\n[Examples]:\n${examples.join('\n')}`;
+                // 타입 변경: meaning -> reason_ko, examples -> (없음/reason_ko에 포함됨 or corrected_en)
+                // spec: corrected_en, reason_ko
+                const { corrected_en, reason_ko, natural } = res.data.data as any; // 타입 단언 필요할 수 있음
+
+                let feedbackText = "";
+                if (natural) {
+                    feedbackText = "✅ 자연스러운 문장입니다!";
+                } else {
+                    feedbackText = `[교정]: ${corrected_en}\n[이유]: ${reason_ko}`;
+                }
 
                 setMessages(prev =>
                     prev.map(msg =>
@@ -115,10 +149,37 @@ export default function ChatScreen() {
         }
     };
 
-    // 답변 추천 (API 미지원으로 임시 비활성화 or 추후 구현)
+    // 답변 추천
     const handleRequestSuggestion = async (messageId: string, content: string) => {
-        Alert.alert('Info', '답변 추천 기능은 준비 중입니다.');
-        // API 명세에 답변 추천이 없으므로 일단 pass
+        // 기존: Alert.alert('Info', '답변 추천 기능은 준비 중입니다.');
+        // V1.1.0: example-reply
+        setMessages(prev =>
+            prev.map(msg =>
+                msg.id === messageId ? { ...msg, isLoadingExtra: true } : msg,
+            ),
+        );
+        try {
+            // AI가 말한 내용(content)을 기반으로 내가 할 말 추천
+            const res = await aiApi.getExampleReply(content, sessionId || undefined);
+            if (res && res.data && res.data.success) {
+                const suggestion = res.data.data?.reply_example;
+                setMessages(prev =>
+                    prev.map(msg =>
+                        msg.id === messageId
+                            ? { ...msg, suggestion: suggestion, isLoadingExtra: false }
+                            : msg,
+                    ),
+                );
+            }
+
+        } catch (e) {
+            Alert.alert('Error', '추천 답변을 가져오지 못했습니다.');
+            setMessages(prev =>
+                prev.map(msg =>
+                    msg.id === messageId ? { ...msg, isLoadingExtra: false } : msg,
+                ),
+            );
+        }
     };
 
     const handleCloseExtra = (
@@ -147,13 +208,16 @@ export default function ChatScreen() {
         }
 
         try {
-            // 메시지 포맷 변환
+            // 백엔드 저장 (기존 로직)
             const script: ChatMessage[] = messages.map(m => ({
                 from: m.role === 'user' ? 'user' : 'ai',
                 text: m.content,
             }));
-
             await conversationApi.finishSession({ sessionId, script });
+
+            // AI 세션 히스토리 조회 (및 정리) - Review 화면 등에 넘겨줄 데이터가 필요하다면 사용
+            // const historyRes = await aiApi.getHistoryAndClear(sessionId);
+
             Alert.alert('저장 완료', '대화 내용이 저장되었습니다.', [
                 { text: '확인', onPress: () => navigation.navigate('Review') }
             ]);
@@ -177,8 +241,8 @@ export default function ChatScreen() {
         setIsLoading(true);
 
         try {
-            // AI 채팅 요청
-            const res = await aiApi.chat(input);
+            // AI 채팅 요청 (sessionId 포함)
+            const res = await aiApi.chat(input, sessionId || undefined);
             if (res.data.success && res.data.data) {
                 const assistantMessage: Message = {
                     id: (Date.now() + 1).toString(),
@@ -186,6 +250,10 @@ export default function ChatScreen() {
                     content: res.data.data.text,
                 };
                 setMessages(prev => [...prev, assistantMessage]);
+
+                // TTS 자동 재생 (선택 사항)
+                // const ttsRes = await aiApi.tts(res.data.data.text);
+                // playAudio(ttsRes.data.data.audio); // 구현 필요
             }
         } catch (error) {
             console.error(error);
@@ -193,6 +261,23 @@ export default function ChatScreen() {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    // STT 버큰 핸들러 (구현 툴 & 주석)
+    const handleMicPress = async () => {
+        // [STT 구현 계획]
+        // 1. 권한 요청 (Platform.OS === 'android' ? PermissionsAndroid... : iOS Info.plist)
+        // 2. AudioRecorder 라이브러리 시작
+        //    const result = await audioRecorderPlayer.startRecorder();
+        // 3. 사용자가 다시 누르면 녹음 중지
+        //    const result = await audioRecorderPlayer.stopRecorder();
+        // 4. 파일(result)을 읽어서 바이너리(Blob/Base64)로 변환
+        // 5. API 호출:
+        //    const sttRes = await aiApi.stt(binaryData);
+        //    setInput(sttRes.data.data.transcript);
+
+        Alert.alert("알림", "음성 인식 기능은 현재 준비 중입니다.\n(Recording Library Not Installed)");
+        console.log("Mic button pressed. STT logic is commented out.");
     };
 
     const renderItem = ({ item }: { item: Message }) => {
@@ -364,7 +449,7 @@ export default function ChatScreen() {
                                 onSubmitEditing={handleFormSubmit}
                                 returnKeyType="send"
                             />
-                            <TouchableOpacity style={styles.micButton}>
+                            <TouchableOpacity style={styles.micButton} onPress={handleMicPress}>
                                 <Mic color="#9ca3af" size={20} />
                             </TouchableOpacity>
                         </View>

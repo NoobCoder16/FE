@@ -3,7 +3,8 @@
 export interface ApiResponse<T = any> {
     success: boolean;
     data?: T;
-    message?: string;
+    error?: string | null; // V1.1.0 Spec: 에러 메시지
+    message?: string; // 하위 호환성 유지
     code?: string;
     meta?: {
         requestId?: string;
@@ -116,6 +117,37 @@ export interface SttResponse {
 export interface TtsResponse {
     audio: string; // base64
     mime: string;
+}
+
+export interface AiResetResponse {
+    sessionId: string;
+}
+
+export interface SttRecognizeResponse {
+    transcript: string;
+}
+
+export interface ExampleReplyResponse {
+    reply_example: string;
+}
+
+export interface AiReviewResponse {
+    sessionId: string;
+    vocabulary: {
+        term: string;
+        meaning_ko: string;
+        examples?: string[];
+    }[];
+    feedback: {
+        original: string;
+        corrected_en: string;
+        reason_ko: string;
+    }[];
+}
+
+export interface AiAccuracyResponse {
+    sessionId: string;
+    accuracy: number;
 }
 
 // === 5. Settings ===
